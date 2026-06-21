@@ -1,18 +1,23 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
   Users,
   ShoppingCart,
   Box,
+  Truck,
   Zap,
 } from 'lucide-react';
 
-const navItems = [
-  { to: '/',         icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/products', icon: Package,         label: 'Products'  },
-  { to: '/customers',icon: Users,           label: 'Customers' },
-  { to: '/orders',   icon: ShoppingCart,    label: 'Orders'    },
+const mainNav = [
+  { to: '/',          icon: LayoutDashboard, label: 'Dashboard'  },
+  { to: '/products',  icon: Package,         label: 'Products'   },
+  { to: '/customers', icon: Users,           label: 'Customers'  },
+  { to: '/orders',    icon: ShoppingCart,    label: 'Orders'     },
+];
+
+const operationsNav = [
+  { to: '/suppliers', icon: Truck,           label: 'Suppliers'  },
 ];
 
 export default function Sidebar() {
@@ -28,12 +33,24 @@ export default function Sidebar() {
       </div>
 
       <nav className="sidebar-nav">
-        <div className="sidebar-section-label">Navigation</div>
-        {navItems.map(({ to, icon: Icon, label }) => (
+        <div className="sidebar-section-label">Main</div>
+        {mainNav.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/'}
+            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+          >
+            <Icon size={18} className="nav-icon" />
+            {label}
+          </NavLink>
+        ))}
+
+        <div className="sidebar-section-label" style={{ marginTop: 12 }}>Operations</div>
+        {operationsNav.map(({ to, icon: Icon, label }) => (
+          <NavLink
+            key={to}
+            to={to}
             className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
           >
             <Icon size={18} className="nav-icon" />

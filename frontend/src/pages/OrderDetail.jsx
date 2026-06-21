@@ -1,30 +1,118 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, User, Calendar, StickyNote } from 'lucide-react';
-import { getOrder } from '../api';
+import { ArrowLeft, Package, User, Calendar, StickyNote, CheckCircle2, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { getOrder, updateOrderStatus } from '../api';
+
+// Valid next statuses for each state
+const VALID_TRANSITIONS = {
+  pending:   ['confirmed', 'cancelled'],
+  confirmed: ['packed',    'cancelled'],
+  packed:    ['shipped',   'cancelled'],
+  shipped:   ['delivered', 'cancelled'],
+  delivered: ['returned'],
+  cancelled: [],
+  returned:  [],
+};
+
+// The linear "forward" progression steps
+const STATUS_STEPS = ['pending', 'confirmed', 'packed', 'shipped', 'delivered'];
+
+const STATUS_LABELS = {
+  pending:   'Pending',
+  confirmed: 'Confirmed',
+  packed:    'Packed',
+  shipped:   'Shipped',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+  returned:  'Returned',
+};
+
+function StatusStepper({ currentStatus }) {
+  const isTerminalAlt = currentStatus === 'cancelled' || currentStatus === 'returned';
+
+  if (isTerminalAlt) {
+    return (
+      <div className="status-stepper">
+        {STATUS_STEPS.map((step) => (
+          <div key={step} className="step step-skipped">
+            <div className="step-dot">—</div>
+            <div className="step-label">{STATUS_LABELS[step]}</div>
+          </div>
+        ))}
+        <div className="step-terminal">
+          <span className={`badge ${currentStatus === 'cancelled' ? 'badge-danger' : 'badge-warning'}`}>
+            {STATUS_LABELS[currentStatus]}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const currentIdx = STATUS_STEPS.indexOf(currentStatus);
+
+  return (
+    <div className="status-stepper">
+      {STATUS_STEPS.map((step, idx) => {
+        const isDone   = idx < currentIdx;
+        const isActive = idx === currentIdx;
+        return (
+          <div key={step} className={`step ${isDone ? 'step-done' : ''} ${isActive ? 'step-active' : ''}`}>
+            {idx < STATUS_STEPS.length - 1 && <div className={`step-connector ${isDone ? 'connector-done' : ''}`} />}
+            <div className="step-dot">
+              {isDone ? <CheckCircle2 size={14} /> : isActive ? <Clock size={13} /> : idx + 1}
+            </div>
+            <div className="step-label">{STATUS_LABELS[step]}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [order, setOrder] = useState(null);
+  const [order, setOrder]     = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [updating, setUpdating] = useState(false);
+  const [error, setError]     = useState('');
 
-  useEffect(() => {
+  const fetchOrder = () => {
+    setLoading(true);
     getOrder(id)
       .then((r) => setOrder(r.data))
       .catch(() => setError('Order not found.'))
       .finally(() => setLoading(false));
-  }, [id]);
+  };
+
+  useEffect(() => { fetchOrder(); }, [id]);
+
+  const handleStatusUpdate = async (newStatus) => {
+    setUpdating(true);
+    try {
+      await updateOrderStatus(id, newStatus);
+      toast.success(`Order marked as "${STATUS_LABELS[newStatus]}"`);
+      fetchOrder();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to update status');
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
   if (error)   return <p style={{ color: 'var(--danger)', padding: 24 }}>{error}</p>;
 
   const statusBadge = (s) => {
-    if (s === 'completed') return 'badge-success';
-    if (s === 'cancelled') return 'badge-danger';
+    if (s === 'completed' || s === 'delivered') return 'badge-success';
+    if (s === 'cancelled' || s === 'returned')  return 'badge-danger';
     return 'badge-warning';
   };
+
+  const nextStatuses = VALID_TRANSITIONS[order.status] || [];
+  const forwardNext  = nextStatuses.filter((s) => s !== 'cancelled' && s !== 'returned');
+  const altNext      = nextStatuses.filter((s) => s === 'cancelled' || s === 'returned');
 
   return (
     <div>
@@ -35,10 +123,51 @@ export default function OrderDetail() {
           </button>
           <h2>Order #{order.id}</h2>
           <p>
-            <span className={`badge ${statusBadge(order.status)}`} style={{ marginRight: 8 }}>{order.status}</span>
+            <span className={`badge ${statusBadge(order.status)}`} style={{ marginRight: 8 }}>
+              {STATUS_LABELS[order.status] || order.status}
+            </span>
             Placed on {order.created_at ? new Date(order.created_at).toLocaleString() : '—'}
           </p>
         </div>
+
+        {/* Status action buttons */}
+        {nextStatuses.length > 0 && (
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            {forwardNext.map((s) => (
+              <button
+                key={s}
+                id={`status-btn-${s}`}
+                className="btn btn-primary btn-sm"
+                onClick={() => handleStatusUpdate(s)}
+                disabled={updating}
+              >
+                {updating ? '…' : `Mark as ${STATUS_LABELS[s]}`}
+              </button>
+            ))}
+            {altNext.map((s) => (
+              <button
+                key={s}
+                id={`status-btn-${s}`}
+                className="btn btn-danger btn-sm"
+                onClick={() => handleStatusUpdate(s)}
+                disabled={updating}
+              >
+                {updating ? '…' : STATUS_LABELS[s] === 'Cancelled' ? 'Cancel Order' : 'Mark Returned'}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Status Stepper */}
+      <div className="card" style={{ marginBottom: 24, padding: '20px 28px' }}>
+        <div className="card-title" style={{ marginBottom: 20 }}>Order Progress</div>
+        <StatusStepper currentStatus={order.status} />
+        {(order.status === 'cancelled' || order.status === 'returned') && (
+          <p style={{ marginTop: 14, fontSize: 13, color: 'var(--success)' }}>
+            ✓ Stock has been restored for all items in this order.
+          </p>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24 }}>
@@ -109,12 +238,18 @@ export default function OrderDetail() {
               </div>
               <div className="detail-field">
                 <label>Status</label>
-                <p><span className={`badge ${statusBadge(order.status)}`}>{order.status}</span></p>
+                <p><span className={`badge ${statusBadge(order.status)}`}>{STATUS_LABELS[order.status] || order.status}</span></p>
               </div>
               <div className="detail-field">
                 <label>Created</label>
                 <p>{order.created_at ? new Date(order.created_at).toLocaleString() : '—'}</p>
               </div>
+              {order.updated_at && (
+                <div className="detail-field">
+                  <label>Last Updated</label>
+                  <p>{new Date(order.updated_at).toLocaleString()}</p>
+                </div>
+              )}
               <div className="detail-field">
                 <label>Total</label>
                 <p style={{ color: 'var(--success)', fontWeight: 700, fontSize: 20 }}>₹{Number(order.total_amount).toFixed(2)}</p>

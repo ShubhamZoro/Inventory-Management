@@ -6,6 +6,7 @@ import Products from './pages/Products';
 import Customers from './pages/Customers';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
+import Suppliers from './pages/Suppliers';
 
 export default function App() {
   return (
@@ -28,11 +29,12 @@ export default function App() {
         <div className="main-content">
           <div className="page-content">
             <Routes>
-              <Route path="/"          element={<Dashboard />} />
-              <Route path="/products"  element={<Products />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/orders"    element={<Orders />} />
-              <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/"            element={<Dashboard />} />
+              <Route path="/products"    element={<Products />} />
+              <Route path="/customers"   element={<Customers />} />
+              <Route path="/orders"      element={<Orders />} />
+              <Route path="/orders/:id"  element={<OrderDetail />} />
+              <Route path="/suppliers"   element={<Suppliers />} />
             </Routes>
           </div>
         </div>

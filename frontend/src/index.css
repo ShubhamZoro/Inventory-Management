@@ -772,6 +772,176 @@ tbody td {
 }
 
 /* ═══════════════════════════════════════════
+   STATUS STEPPER
+═══════════════════════════════════════════ */
+.status-stepper {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  position: relative;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  min-width: 80px;
+}
+
+.step-connector {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+
+.connector-done { background: var(--accent); }
+
+.step-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  position: relative;
+  z-index: 1;
+  transition: var(--transition);
+}
+
+.step-done .step-dot {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.step-active .step-dot {
+  background: var(--bg-card);
+  border-color: var(--accent);
+  color: var(--accent-light);
+  box-shadow: 0 0 16px var(--accent-glow);
+  animation: pulse-step 2s infinite;
+}
+
+.step-skipped .step-dot {
+  opacity: 0.3;
+}
+
+@keyframes pulse-step {
+  0%, 100% { box-shadow: 0 0 8px var(--accent-glow); }
+  50%        { box-shadow: 0 0 20px rgba(99, 102, 241, 0.5); }
+}
+
+.step-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 8px;
+  text-transform: capitalize;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.step-done .step-label,
+.step-active .step-label {
+  color: var(--text-secondary);
+}
+
+.step-active .step-label { color: var(--accent-light); }
+
+.step-terminal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 20px;
+  padding-top: 6px;
+}
+
+/* ═══════════════════════════════════════════
+   SUPPLIER ROWS
+═══════════════════════════════════════════ */
+.supplier-row {
+  border-bottom: 1px solid rgba(99, 130, 255, 0.07);
+  transition: var(--transition);
+}
+
+.supplier-row:last-child { border-bottom: none; }
+
+.supplier-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.supplier-header:hover { background: rgba(99, 102, 241, 0.04); }
+
+.supplier-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.po-subtable {
+  background: rgba(0, 0, 0, 0.15);
+  border-top: 1px solid var(--border);
+  animation: fade-in 0.2s ease;
+}
+
+.po-subtable table { margin: 0; }
+
+.po-subtable thead th {
+  background: rgba(0, 0, 0, 0.25);
+  padding: 10px 20px;
+  font-size: 11px;
+}
+
+.po-subtable tbody td { padding: 12px 20px; }
+
+/* ═══════════════════════════════════════════
+   PURCHASE ORDER TOTAL PREVIEW
+═══════════════════════════════════════════ */
+.po-total-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: var(--radius-sm);
+  margin-bottom: 20px;
+}
+
+/* ═══════════════════════════════════════════
+   BADGE ACCENT (filled)
+═══════════════════════════════════════════ */
+.badge-info { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+
+/* ═══════════════════════════════════════════
    RESPONSIVE
 ═══════════════════════════════════════════ */
 @media (max-width: 768px) {
@@ -782,6 +952,8 @@ tbody td {
   .form-row { grid-template-columns: 1fr; }
   .detail-grid { grid-template-columns: 1fr; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
+  .status-stepper { gap: 2px; }
+  .step { min-width: 60px; }
 }
 
 @media (max-width: 480px) {

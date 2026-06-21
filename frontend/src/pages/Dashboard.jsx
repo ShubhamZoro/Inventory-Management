@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, Users, ShoppingCart, DollarSign, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Package, Users, ShoppingCart, DollarSign, AlertTriangle, ArrowRight, ShoppingBag } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import { getDashboard } from '../api';
 
@@ -58,6 +58,13 @@ export default function Dashboard() {
           icon={DollarSign}
           color="#ec4899"
           gradient="linear-gradient(90deg, #ec4899, #f472b6)"
+        />
+        <StatCard
+          value={data.pending_purchase_orders ?? 0}
+          label="Pending POs"
+          icon={ShoppingBag}
+          color="#38bdf8"
+          gradient="linear-gradient(90deg, #38bdf8, #7dd3fc)"
         />
       </div>
 

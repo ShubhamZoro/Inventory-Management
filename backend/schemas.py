@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator
 from typing import Optional, List
 from datetime import datetime
 
@@ -120,6 +120,18 @@ class OrderCreate(BaseModel):
         return v
 
 
+class OrderStatusUpdate(BaseModel):
+    status: str
+
+    @field_validator("status")
+    @classmethod
+    def valid_status(cls, v):
+        allowed = ["confirmed", "packed", "shipped", "delivered", "cancelled", "returned"]
+        if v not in allowed:
+            raise ValueError(f"Status must be one of: {', '.join(allowed)}")
+        return v
+
+
 class OrderResponse(BaseModel):
     id: int
     customer_id: int
@@ -134,6 +146,108 @@ class OrderResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# ─── Supplier Schemas ─────────────────────────────────────────────────────────
+
+class SupplierBase(BaseModel):
+    name: str
+    contact_person: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+
+
+class SupplierCreate(SupplierBase):
+    pass
+
+
+class SupplierUpdate(BaseModel):
+    name: Optional[str] = None
+    contact_person: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+
+
+class SupplierResponse(SupplierBase):
+    id: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+
+# ─── Purchase Order Schemas ───────────────────────────────────────────────────
+
+class PurchaseOrderCreate(BaseModel):
+    supplier_id: int
+    product_id: int
+    quantity: int
+    unit_cost: float
+    expected_date: Optional[datetime] = None
+    notes: Optional[str] = None
+
+    @field_validator("quantity")
+    @classmethod
+    def quantity_positive(cls, v):
+        if v <= 0:
+            raise ValueError("Quantity must be greater than 0")
+        return v
+
+    @field_validator("unit_cost")
+    @classmethod
+    def cost_non_negative(cls, v):
+        if v < 0:
+            raise ValueError("Unit cost must be non-negative")
+        return v
+
+
+class PurchaseOrderStatusUpdate(BaseModel):
+    status: str
+
+    @field_validator("status")
+    @classmethod
+    def valid_status(cls, v):
+        allowed = ["pending", "ordered", "received", "cancelled"]
+        if v not in allowed:
+            raise ValueError(f"Status must be one of: {', '.join(allowed)}")
+        return v
+
+
+class PurchaseOrderResponse(BaseModel):
+    id: int
+    supplier_id: int
+    product_id: int
+    quantity: int
+    unit_cost: float
+    total_cost: float
+    expected_date: Optional[datetime] = None
+    received_date: Optional[datetime] = None
+    status: str
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    supplier: Optional[SupplierResponse] = None
+    product: Optional[ProductResponse] = None
+
+    model_config = {"from_attributes": True}
+
+
+# ─── Stock Movement Schema ────────────────────────────────────────────────────
+
+class StockMovementResponse(BaseModel):
+    id: int
+    product_id: int
+    change_qty: int
+    movement_type: str
+    reference_id: Optional[int] = None
+    reference_type: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+    product: Optional[ProductResponse] = None
+
+    model_config = {"from_attributes": True}
+
+
 # ─── Dashboard Schema ─────────────────────────────────────────────────────────
 
 class DashboardResponse(BaseModel):
@@ -142,3 +256,4 @@ class DashboardResponse(BaseModel):
     total_orders: int
     total_revenue: float
     low_stock_products: List[ProductResponse]
+    pending_purchase_orders: int
